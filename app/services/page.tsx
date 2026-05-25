@@ -27,9 +27,15 @@ export default function ServicesPage() {
   })
 
   const fetchServices = async (pid: number | null = null) => {
-    const query = supabase.from('services').select('*').order('name')
-    const { data } = pid ? query.eq('parent_id', pid) : query.is('parent_id', null)
-    setServices(data || [])
+    let data: any[] = []
+    if (pid) {
+      const res = await supabase.from('services').select('*').eq('parent_id', pid).order('name')
+      data = res.data || []
+    } else {
+      const res = await supabase.from('services').select('*').is('parent_id', null).order('name')
+      data = res.data || []
+    }
+    setServices(data)
     setLoading(false)
   }
 
@@ -127,13 +133,11 @@ export default function ServicesPage() {
                 </div>
                 <StatusBadge status={s.status} />
               </div>
-
               <div className="flex flex-wrap gap-2 mb-4">
                 <span className="badge badge-blue text-xs">{s.type}</span>
                 {s.counts_for_reward && <span className="badge badge-yellow text-xs">⭐ يحسب</span>}
                 {s.is_online && <span className="badge badge-green text-xs">🌐 أونلاين</span>}
               </div>
-
               <div className="flex gap-2">
                 <button onClick={() => handleDrillDown(s)} className="btn-secondary text-xs flex-1">
                   الخدمات الفرعية
@@ -167,7 +171,6 @@ export default function ServicesPage() {
               {['ماكينة', 'كاش', 'كروت', 'داخلي', 'مصروف'].map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
-
           {form.type === 'ماكينة' && (
             <div>
               <label className="text-xs text-slate-400 mb-1 block">الماكينة</label>
@@ -177,7 +180,6 @@ export default function ServicesPage() {
               </select>
             </div>
           )}
-
           {form.type === 'كاش' && (
             <div>
               <label className="text-xs text-slate-400 mb-1 block">المحفظة</label>
@@ -187,7 +189,6 @@ export default function ServicesPage() {
               </select>
             </div>
           )}
-
           {form.type === 'كروت' && (
             <div>
               <label className="text-xs text-slate-400 mb-1 block">نوع الكارت</label>
@@ -197,7 +198,6 @@ export default function ServicesPage() {
               </select>
             </div>
           )}
-
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
               <input type="checkbox" checked={form.counts_for_reward} onChange={e => setForm({...form, counts_for_reward: e.target.checked})} className="w-4 h-4" />
@@ -208,7 +208,6 @@ export default function ServicesPage() {
               متاح أونلاين
             </label>
           </div>
-
           <button onClick={handleAdd} className="btn-primary w-full">إضافة</button>
         </div>
       </Modal>
@@ -217,12 +216,7 @@ export default function ServicesPage() {
       <Modal open={!!suspendModal} onClose={() => setSuspendModal(null)} title="تعليق الخدمة">
         <div className="space-y-4">
           <p className="text-slate-400 text-sm">سبب تعليق خدمة <span className="text-white font-medium">{suspendModal?.name}</span></p>
-          <textarea
-            className="input resize-none h-24"
-            placeholder="مثال: الخدمة متوقفة من المصدر..."
-            value={suspendReason}
-            onChange={e => setSuspendReason(e.target.value)}
-          />
+          <textarea className="input resize-none h-24" placeholder="مثال: الخدمة متوقفة من المصدر..." value={suspendReason} onChange={e => setSuspendReason(e.target.value)} />
           <div className="flex gap-3">
             <button onClick={confirmSuspend} className="btn-primary flex-1">تأكيد التعليق</button>
             <button onClick={() => setSuspendModal(null)} className="btn-secondary">إلغاء</button>
