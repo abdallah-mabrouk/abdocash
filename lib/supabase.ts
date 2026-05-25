@@ -7,7 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // دالة تسجيل الدخول
 export async function signIn(phone: string, password: string) {
-  const email = `${phone}@abda.cash`
+  const email = `${phone}@abdo.cash.com`
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   return { data, error }
 }

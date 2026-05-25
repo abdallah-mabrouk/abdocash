@@ -1,4 +1,5 @@
 'use client'
+export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import MainLayout from '@/components/layout/MainLayout'
 import { PageHeader, StatusBadge, Table, LoadingSpinner, Modal, EmptyState } from '@/components/ui'
@@ -36,7 +37,7 @@ export default function EmployeesPage() {
   }, [])
 
   const handleAdd = async () => {
-    const email = `${form.phone}@abda.cash`
+    const email = `${form.phone}@abdo.cash.com`
     const { data: authData, error } = await supabase.auth.admin.createUser({
       email,
       password: form.password,
