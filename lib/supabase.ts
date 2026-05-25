@@ -20,14 +20,24 @@ export async function signOut() {
 
 // جلب المستخدم الحالي مع بياناته من جدول users
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return null
 
-  const { data } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    const { data, error: dbError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle()
 
-  return data
+    if (dbError) {
+      console.error('DB Error:', dbError)
+      return null
+    }
+
+    return data
+  } catch (e) {
+    console.error('getCurrentUser error:', e)
+    return null
+  }
 }
