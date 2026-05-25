@@ -3,7 +3,17 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase, getCurrentUser } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 
-const AuthContext = createContext<any>(null)
+interface AuthContextType {
+  user: any
+  setUser: (user: any) => void
+  loading: boolean
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  setUser: () => {},
+  loading: true,
+})
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null)
@@ -13,35 +23,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const userData = await getCurrentUser()
-      setUser(userData)
-      setLoading(false)
+      try {
+        const userData = await getCurrentUser()
+        setUser(userData)
+        setLoading(false)
 
-      // لو مش مسجل دخول وراح لصفحة غير login
-      if (!userData && pathname !== '/login') {
-        router.push('/login')
-      }
+        if (!userData && pathname !== '/login') {
+          router.push('/login')
+          return
+        }
 
-      // لو مسجل دخول وراح للـ login
-      if (userData && pathname === '/login') {
-        router.push('/dashboard')
-      }
+        if (userData && pathname === '/login') {
+          router.push('/dashboard')
+          return
+        }
 
-      // لو موظف حاول يدخل صفحة الأدمن
-      if (userData?.role === 'موظف' && ['/dashboard', '/reports', '/employees', '/settings'].includes(pathname)) {
-        router.push('/requests')
+        if (userData?.role === 'موظف' &&
+          ['/dashboard', '/reports', '/employees', '/settings'].includes(pathname)) {
+          router.push('/requests')
+          return
+        }
+
+        // تحديث last_seen
+        if (userData) {
+          await supabase.from('users')
+            .update({ last_seen: new Date().toISOString() })
+            .eq('id', userData.id)
+        }
+      } catch (e) {
+        setLoading(false)
       }
     }
     init()
-
-    // تحديث last_seen
-    const updateLastSeen = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) {
-        await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', authUser.id)
-      }
-    }
-    updateLastSeen()
   }, [pathname])
 
   return (
@@ -51,4 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export const useAuth = () => useContext(AuthContext)
+export function useAuth() {
+  const context = useContext(AuthContext)
+  return context
+}
